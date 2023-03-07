@@ -1,4 +1,3 @@
-# ./
 As the title of the repository suggests, this Python script searches for duplicate files in a directory tree, or in a list of directory trees, and it replaces them with a symbolic link, keeping only one copy.
 
 It's meant to run on Linux or MacOS, since both operating systems support symbolic links.
