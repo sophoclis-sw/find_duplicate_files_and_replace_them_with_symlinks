@@ -24,7 +24,7 @@ def compute_md5(filename):
     return hash_md5.hexdigest()
 
 # Define a function to find duplicate files in a directory tree using only their size. CRC32 or MD5 check will follow only for the duplicates.
-def find_duplicate_files(directories):
+def find_duplicate_files(directories, filespecs):
     print("find_duplicate_files('{}')\n".format(directories))
     duplicate_files_size = 0
     duplicate_files_count = 0
@@ -37,6 +37,13 @@ def find_duplicate_files(directories):
             print("Potentially saved so far: ", format(duplicate_files_size, ",d"), "bytes |", format(duplicate_files_count, ",d"), "files |", dirpath)
             for filename in filenames:
                 full_path = os.path.join(dirpath, filename)
+                file_matches = False
+                for filespec in filespecs:
+                    if pathlib.PurePath(full_path).match(filespec):
+                        file_matches = True
+                        break
+                if file_matches == False:
+                    continue
                 # Ignore symbolic links
                 if not os.path.islink(full_path):
                     # Compute file size and CRC32 hash
@@ -115,9 +122,10 @@ def replace_duplicate_files_with_links(duplicate_files, dry_run=True, use_md5=Fa
 
 # Parse command line arguments and run
 parser = argparse.ArgumentParser(description="Find and replace duplicate files with symbolic links in a given directory tree, or in multiple directories.")
-parser.add_argument("-d", "--dir",    metavar="<DIRECTORY>", action="append",     type=pathlib.Path, required=True, help="The directory to search for duplicates. You can add multiple directories using the -d for each one of them.")
-parser.add_argument("-r", "--remove",                        action="store_true",                                   help="Remove the duplicate files from directory, and replace them with symbolic links.")
-parser.add_argument("-md5",                                  action="store_true",                                   help="Calculate the MD5 hash for the duplicate files to increase reliability. By default CRC32 will be used for speed.")
+parser.add_argument("-f", "--file",   metavar="<FILE SPEC>", action="append",                        required=False, help="The file spec to search for duplicates. For example -f "'*.JPG'" You can add multiple file specs using the -f for each one of them.")
+parser.add_argument("-d", "--dir",    metavar="<DIRECTORY>", action="append",     type=pathlib.Path, required=True,  help="The directory to search for duplicates. You can add multiple directories using the -d for each one of them.")
+parser.add_argument("-r", "--remove",                        action="store_true",                                    help="Remove the duplicate files from directory, and replace them with symbolic links.")
+parser.add_argument("-md5",                                  action="store_true",                                    help="Calculate the MD5 hash for the duplicate files to increase reliability. By default CRC32 will be used for speed.")
 
 dry_run = True
 
@@ -130,12 +138,23 @@ if args.dir == []:
 else:
    print(args.dir)
 
+if args.file != []:
+   print(args.file)
+
+
 remove_and_link = args.remove
 use_md5 = args.md5
 
 directories = []
 for directory in args.dir:
-  directories.append(os.path.abspath(directory))
+    directories.append(os.path.abspath(directory))
+
+filespecs = []
+for filespec in args.file:
+    filespecs.append(filespec)
+
+if len(filespecs)==0:
+    filespecs=['*']
 
 # If the --remove-and-link argument is not present, the dry_run is True by default
 if remove_and_link == True:
@@ -151,7 +170,10 @@ else:
 for i in range(len(directories)):
     print("Directory {}:    {}".format(i+1, directories[i]))
 
+for i in range(len(filespecs)):
+    print("Filespec  {}:    {}".format(i+1, filespecs[i]))
 
-duplicate_files = find_duplicate_files(directories)
+
+duplicate_files = find_duplicate_files(directories, filespecs)
 replace_duplicate_files_with_links(duplicate_files, dry_run, use_md5)
 
