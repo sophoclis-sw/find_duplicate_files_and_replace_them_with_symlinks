@@ -37,3 +37,11 @@ Finally, the bash script "restore_original_files_in_place_of_symlinks.sh" is run
 replacing all the symbolic links that it finds with a copy of the original files they're pointing to.
 This was created to reverse the actions of the Python script, but you need to use it with caution, since it's not getting any arguments for path,
 and it doesn't have a "dry-run" mode yet.
+
+
+
+You can now specify a list of fille patterns to match when looking for duplicate files, for example:
+
+./find_duplicate_files_and_replace_them_with_symlinks.py -d ~/Pictures -f "*.CR2" -f "*.CR3" -f "*.ARW"
+
+The above example will look in the directory "~/Pictures" for files matching "*.CR2", "*.CR3", "*.ARW" i.e. Canon's RAW files v2 & v3, and Sony's RAW files to check if there are any duplicates
