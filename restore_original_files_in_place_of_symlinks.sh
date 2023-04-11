@@ -3,7 +3,7 @@
 find . -type l | while read link
 do 
    target=$(readlink "$link")
-   rm "$link"
+   rm -fv "$link"
    cp -v "$target" "$link"
 done
 
