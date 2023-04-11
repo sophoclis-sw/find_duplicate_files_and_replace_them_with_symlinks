@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/local/bin/python3
 
 import os
 import hashlib
@@ -24,7 +24,7 @@ def compute_md5(filename):
     return hash_md5.hexdigest()
 
 # Define a function to find duplicate files in a directory tree using only their size. CRC32 or MD5 check will follow only for the duplicates.
-def find_duplicate_files(directories, filespecs):
+def find_duplicate_files(directories, filespecs, min_size):
     print("find_duplicate_files('{}')\n".format(directories))
     duplicate_files_size = 0
     duplicate_files_count = 0
@@ -61,6 +61,8 @@ def find_duplicate_files(directories, filespecs):
                 # duplicate_files_count += 1
                 # local_duplicates_count += 1
                 # Add file to dictionary
+                if file_size < min_size:
+                    continue
                 if (file_size, 0) not in files_by_size_and_dummy_hash:
                     files_by_size_and_dummy_hash[(file_size, 0)] = [full_path]
                 else:
@@ -139,11 +141,11 @@ def replace_duplicate_files_with_links(duplicate_files, dry_run=True, use_md5=Fa
 if __name__ == "__main__":
     # Parse command line arguments and run
     parser = argparse.ArgumentParser(description="Find and replace duplicate files with symbolic links in a given directory tree, or in multiple directories.")
-    parser.add_argument("-f", "--file",   metavar="<FILE SPEC>", action="append",                        required=False, help="The file spec to search for duplicates. For example -f "'*.JPG'" You can add multiple file specs using the -f for each one of them.")
-    parser.add_argument("-d", "--dir",    metavar="<DIRECTORY>", action="append",     type=pathlib.Path, required=True,  help="The directory to search for duplicates. You can add multiple directories using the -d for each one of them.")
-    parser.add_argument("-r", "--remove",                        action="store_true",                                    help="Remove the duplicate files from directory, and replace them with symbolic links.")
-    parser.add_argument("-md5",                                  action="store_true",                                    help="Calculate the MD5 hash for the duplicate files to increase reliability. By default CRC32 will be used for speed.")
-
+    parser.add_argument("-f",   "--file",     metavar="<FILE SPEC>", action="append",                        required=False, help="The file spec to search for duplicates. For example -f "'*.JPG'" You can add multiple file specs using the -f for each one of them.")
+    parser.add_argument("-d",   "--dir",      metavar="<DIRECTORY>", action="append",     type=pathlib.Path, required=True,  help="The directory to search for duplicates. You can add multiple directories using the -d for each one of them.")
+    parser.add_argument("-r",   "--remove",                          action="store_true",                                    help="Remove the duplicate files from directory, and replace them with symbolic links.")
+    parser.add_argument("-md5",                                      action="store_true",                                    help="Calculate the MD5 hash for the duplicate files to increase reliability. By default CRC32 will be used for speed.")
+    parser.add_argument("-m",   "--min_size",                                             type=int,                          help="Minimum file size to consider (skip smaller files)")
     dry_run = True
 
     args = parser.parse_args()
@@ -153,11 +155,15 @@ if __name__ == "__main__":
         print("At least one directory should be given in the command line. Exiting...")
         exit()
     else:
-       print(args.dir)
+        print(args.dir)
 
     if args.file != []:
-       print(args.file)
+        print(args.file)
 
+    if not args.min_size is None:
+        min_file_size = args.min_size
+    else:
+        min_file_size = 1
 
     remove_and_link = args.remove
     use_md5 = args.md5
@@ -192,5 +198,5 @@ if __name__ == "__main__":
         print("Filespec  {}:    {}".format(i+1, filespecs[i]))
 
 
-    duplicate_files = find_duplicate_files(directories, filespecs)
+    duplicate_files = find_duplicate_files(directories, filespecs, min_file_size)
     replace_duplicate_files_with_links(duplicate_files, dry_run, use_md5)
