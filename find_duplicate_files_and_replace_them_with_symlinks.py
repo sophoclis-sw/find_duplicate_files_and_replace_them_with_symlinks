@@ -1,11 +1,9 @@
 #!/usr/local/bin/python3
-
 import os
 import hashlib
 import zlib
 import argparse
 import pathlib
-
 # Define a function to compute the CRC32 hash of a file
 def compute_crc32(filename):
     crc = 0
@@ -14,7 +12,6 @@ def compute_crc32(filename):
             crc = zlib.crc32(chunk, crc)
     return crc & 0xffffffff
 
-
 # Define a function to compute the MD5 hash of a file
 def compute_md5(filename):
     hash_md5 = hashlib.md5()
@@ -22,7 +19,6 @@ def compute_md5(filename):
         for chunk in iter(lambda: f.read(4096), b""):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
-
 # Define a function to find duplicate files in a directory tree using only their size. CRC32 or MD5 check will follow only for the duplicates.
 def find_duplicate_files(directories, filespecs, min_size):
     print("find_duplicate_files('{}')\n".format(directories))
@@ -78,7 +74,6 @@ def find_duplicate_files(directories, filespecs, min_size):
     # print(duplicate_files)
     return duplicate_files
 
-
 # Define a function to replace duplicate files with symbolic links
 def replace_duplicate_files_with_links(duplicate_files, dry_run=True, use_md5=False):
     print("==================================================================================================================")
@@ -106,7 +101,6 @@ def replace_duplicate_files_with_links(duplicate_files, dry_run=True, use_md5=Fa
                 duplicate_files_with_hash[(size, hash1)].append(duplicate_file)
     # Filter out files that have no duplicates
     duplicate_files_new = {k: v for k, v in duplicate_files_with_hash.items() if len(v) > 1}
-
     # print("==============================================================================================================")
     # for item in duplicate_files_new.items():
     #    print(item)
@@ -137,7 +131,6 @@ def replace_duplicate_files_with_links(duplicate_files, dry_run=True, use_md5=Fa
         print(f"Removed", format(duplicate_files_count, ",d"), " files, total size =", format(total_size, ",d"), " bytes")
     print(format(duplicate_files_count, ",d"), " duplicate files total size after hash check: ", format(total_size, ",d"), "bytes")
 
-
 if __name__ == "__main__":
     # Parse command line arguments and run
     parser = argparse.ArgumentParser(description="Find and replace duplicate files with symbolic links in a given directory tree, or in multiple directories.")
@@ -147,31 +140,24 @@ if __name__ == "__main__":
     parser.add_argument("-md5",                                      action="store_true",                                    help="Calculate the MD5 hash for the duplicate files to increase reliability. By default CRC32 will be used for speed.")
     parser.add_argument("-m",   "--min_size",                                             type=int,                          help="Minimum file size to consider (skip smaller files)")
     dry_run = True
-
     args = parser.parse_args()
-
     if args.dir == []:
         print("directory:   '{}'".format(args.dir))
         print("At least one directory should be given in the command line. Exiting...")
         exit()
     else:
         print(args.dir)
-
     if args.file != []:
         print(args.file)
-
     if not args.min_size is None:
         min_file_size = args.min_size
     else:
         min_file_size = 1
-
     remove_and_link = args.remove
     use_md5 = args.md5
-
     directories = []
     for directory in args.dir:
         directories.append(os.path.abspath(directory))
-
     # if no file patterns are given to look for, any file would match the search in the given directories
     filespecs = []
     if args.file is None:
@@ -179,24 +165,19 @@ if __name__ == "__main__":
     else:
         for filespec in args.file:
             filespecs.append(filespec)
-
     # If the --remove-and-link argument is not present, the dry_run is True by default
     if remove_and_link == True:
         dry_run = False
-
     print("Dry run:        {}".format(dry_run))
     print("Remove Files:   {}".format(remove_and_link))
     if args.md5:
         print("Use MD5:        {}".format(use_md5), "(Using MD5 instead of CRC32 for the duplicate files -> slower)")
     else:
         print("Use MD5:        {}".format(use_md5), "(Using CRC32 instead of MD5 for the duplicate files -> faster)")
-
     for i in range(len(directories)):
         print("Directory {}:    {}".format(i+1, directories[i]))
-
     for i in range(len(filespecs)):
         print("Filespec  {}:    {}".format(i+1, filespecs[i]))
-
 
     duplicate_files = find_duplicate_files(directories, filespecs, min_file_size)
     replace_duplicate_files_with_links(duplicate_files, dry_run, use_md5)
